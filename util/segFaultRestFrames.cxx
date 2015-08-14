@@ -106,6 +106,7 @@ int main(){
     metMaker= new met::METMaker("maker");
 
     for(Long64_t ientry = 0; ientry < event->getEntries(); ++ientry){
+      assert(    event->getEntry(ientry) >= 0 );
 
       xAOD::JetContainer const * jets = nullptr;
       assert( metMaker->evtStore()->retrieve(jets , "AntiKt4TruthJets") );
@@ -147,6 +148,7 @@ int main(){
 				jetptcut
 				);
 
+      std::cout << "MG : " <<  RJigsawVariables[ "RJVars_MG"          ] << std::endl;
 
     }//tfile
   }
