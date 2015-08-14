@@ -85,7 +85,7 @@ int main(){
 
 
   std::vector<std::string> sampleName = {
-    "/data/users/rsmith/mc15_13TeV.361060.Sherpa_CT10_SinglePhotonPt4000_CVetoBVeto.merge.DAOD_TRUTH1.e3587_p2375/DAOD_TRUTH1.05969136._000001.pool.root.1"
+    "/afs/cern.ch/user/r/rsmith/public/DAOD_TRUTH1.05969136._000001.pool.root.1"
   };
 
   setupRestFrames();
@@ -141,12 +141,14 @@ int main(){
 
       calculateMET(metx,mety,true);//isTruth
 
+
       calculateRJigsawVariables(goodJets,
 				metx,
 				mety,
 				RJigsawVariables,
 				jetptcut
 				);
+
 
       std::cout << "MG : " <<  RJigsawVariables[ "RJVars_MG"          ] << std::endl;
 
