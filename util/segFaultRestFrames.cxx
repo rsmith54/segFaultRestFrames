@@ -72,14 +72,14 @@ int setupRestFrames();
 int calculateMET(double & metx,
 		 double & mety
 		  );
-int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
+int calculateRJigsawVariables(const xAOD::JetContainer * jets,
 			     Double_t metx,
 			     Double_t mety,
 			     std::map<TString,float>& RJigsawVariables,
 			     Double_t jetPtCut);
 
 
-int segFaultRestFrames(){
+int main(){
 
 
 
@@ -104,7 +104,7 @@ int segFaultRestFrames(){
 
     metMaker= new met::METMaker("maker");
 
-    for(Long64_t ientry = 0; ientry < event.getEntries(); ++ientry){
+    for(Long64_t ientry = 0; ientry < event->getEntries(); ++ientry){
 
       xAOD::JetContainer const * jets = nullptr;
       assert( metMaker->evtStore()->retrieve(jets , "AntiKt4EMTopoJets") );
@@ -138,12 +138,12 @@ int segFaultRestFrames(){
 
       calculateMET(metx,mety);
 
-      calculateRJigsawVaribles(goodjets,
-			       metx,
-			       mety,
-			       RJigsawVariables,
-			       jetptcut
-			       );
+      calculateRJigsawVariables(goodJets,
+				metx,
+				mety,
+				RJigsawVariables,
+				jetptcut
+				);
 
 
     }//tfile
@@ -265,7 +265,8 @@ int calculateMET(double & metx,
     return 0;
 }
 
-int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
+//int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
+int calculateRJigsawVariables(const xAOD::JetContainer* jets,
 			     Double_t metx,
 			     Double_t mety,
 			     std::map<TString,float>& RJigsawVariables,
@@ -281,17 +282,17 @@ int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
 
   // Still need to add jets to frames ///////////////
   std::vector<TLorentzVector> myjets;
-  for(size_t ijet=0; ijet<jets.size(); ijet++)
+  for(size_t ijet=0; ijet<jets->size(); ijet++)
     {
       TLorentzVector jet;
-      jet.SetPtEtaPhiM(jets[ijet].pt(),
-		       jets[ijet].eta(),
-		       jets[ijet].phi(),
-		       jets[ijet].m());
+      jet.SetPtEtaPhiM(jets->at(ijet)->pt(),
+		       jets->at(ijet)->eta(),
+		       jets->at(ijet)->phi(),
+		       jets->at(ijet)->m());
       myjets.push_back(jet);
     }
 
-  for(size_t ijet=0; ijet<jets.size(); ijet++)
+  for(size_t ijet=0; ijet<jets->size(); ijet++)
     {
       if(myjets[ijet].Pt()<jetPtCut) continue;
       jetID_R.push_back( VIS_R->AddLabFrameFourVector( myjets[ijet] )  );
@@ -310,8 +311,8 @@ int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
   TVector3 MET_TV3;
 
   MET_TV3.SetZ(0.);
-  MET_TV3.SetX(metx+.01);
-  MET_TV3.SetY(mety+.01);
+  MET_TV3.SetX(metx);
+  MET_TV3.SetY(mety);
 
 
   // std::cout << "njets calc " << jetID_R.size() << std::endl;
