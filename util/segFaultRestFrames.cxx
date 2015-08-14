@@ -1,6 +1,36 @@
 #include <TChain.h>
 #include "RestFrames/RestFrames.hh"
 
+#include "xAODRootAccess/Init.h"
+#include "xAODRootAccess/TEvent.h"
+#include "xAODRootAccess/TStore.h"
+
+// FrameWork includes
+#include "AsgTools/ToolHandle.h"
+#include "AsgTools/AsgTool.h"
+#include "xAODBase/IParticleContainer.h"
+#include "xAODBase/IParticleHelpers.h"
+
+#include "xAODMissingET/MissingETAuxContainer.h"
+#include "xAODMissingET/MissingETAssociationMap.h"
+#include "xAODMissingET/MissingETContainer.h"
+
+#include "xAODCore/ShallowAuxContainer.h"
+#include "xAODCore/ShallowCopy.h"
+#include "xAODJet/JetContainer.h"
+#include "xAODEgamma/ElectronContainer.h"
+#include "xAODEgamma/PhotonContainer.h"
+#include "xAODMuon/MuonContainer.h"
+#include "xAODTau/TauJetContainer.h"
+
+#include "assert.h"
+#include "TFile.h"
+#include "TRandom3.h"
+
+#include "JetCalibTools/JetCalibrationTool.h"
+
+
+
 #include "METUtilities/METMaker.h"
 
 // For RJigsaw Frame Objects
@@ -33,14 +63,20 @@ RestFrames::SetMassInvJigsaw * MinMassJigsaw_R;
 RestFrames::SetRapidityInvJigsaw * RapidityJigsaw_R;
 RestFrames::ContraBoostInvJigsaw * ContraBoostJigsaw_R;
 RestFrames::MinMassesCombJigsaw * HemiJigsaw_R;
+RestFrames::MinMassesCombJigsaw * CaHemiJigsaw_R;
+RestFrames::MinMassesCombJigsaw * CbHemiJigsaw_R;
 
 met::METMaker * metMaker;
 
 int setupRestFrames();
-void calculateMET(double & metx,
-		  double & mety
+int calculateMET(double & metx,
+		 double & mety
 		  );
-int calculateRJigsawVariables();
+int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
+			     Double_t metx,
+			     Double_t mety,
+			     std::map<TString,float>& RJigsawVariables,
+			     Double_t jetPtCut);
 
 
 int segFaultRestFrames(){
@@ -68,7 +104,7 @@ int segFaultRestFrames(){
 
     metMaker= new met::METMaker("maker");
 
-    for(Long64_t ientry = 0; ientry < fChain.GetEntries(); ++ientry){
+    for(Long64_t ientry = 0; ientry < event.getEntries(); ++ientry){
 
       xAOD::JetContainer const * jets = nullptr;
       assert( metMaker->evtStore()->retrieve(jets , "AntiKt4EMTopoJets") );
@@ -90,7 +126,7 @@ int segFaultRestFrames(){
 	if ( std::abs((*it)->eta()) < 2.8 ) {
 
 	  xAOD::Jet* jet = new xAOD::Jet();
-	  jet->makePrivateStore( **jet_itr );
+	  jet->makePrivateStore( **it );
 	  goodJets->push_back( jet );
 	}
       }
@@ -117,9 +153,9 @@ int segFaultRestFrames(){
   return 0;
 }
 
-void calculateMET(double & metx,
-		  double & mety
-		  ){
+int calculateMET(double & metx,
+		 double & mety
+		 ){
     //retrieve the original containers
     const xAOD::MissingETContainer* coreMet  = nullptr;
     std::string coreMetKey = "MET_Core_AntiKt4EMTopo";
@@ -219,14 +255,14 @@ void calculateMET(double & metx,
 	     );
 
 
-    assert( metMaker.buildMETSum("FinalTrk" , newMetContainer, MissingETBase::Source::Track ) );
+    assert( metMaker->buildMETSum("FinalTrk" , newMetContainer, MissingETBase::Source::Track ) );
 
-    xAOD::MissingETContainer::const_iterator met_it = metcontainer->find("FinalTrk");
+    xAOD::MissingETContainer::const_iterator met_it = newMetContainer->find("FinalTrk");
 
     metx = (*met_it)->mpx();
     mety = (*met_it)->mpy();
 
-    return;
+    return 0;
 }
 
 int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
@@ -267,7 +303,7 @@ int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
 
   if(jetID_R.size() < 2){
     RJigsawVariables = std::map<TString, float>();
-    return;
+    return -1;
   }
 
 
@@ -330,7 +366,9 @@ int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
   RestFrames::VisibleRecoFrame* VC[2];
   RestFrames::InvisibleRecoFrame* X[2];
   // Randomize the two hemispheres
-  int flip = (m_random.Rndm() > 0.5);
+  TRandom3 random;
+
+  int flip = (random.Rndm() > 0.5);
   G[flip] = Ga_R;
   G[(flip+1)%2] = Gb_R;
   C[flip] = Ca_R;
@@ -480,7 +518,7 @@ int calculateRJigsawVariables(const std::vector<xAOD::Jet>& jets,
   ////////////////////////////////////////////////////////////////////////////////
 
 
-
+  return 0 ;
 
 }
 
