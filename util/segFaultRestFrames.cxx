@@ -70,8 +70,9 @@ met::METMaker * metMaker;
 
 int setupRestFrames();
 int calculateMET(double & metx,
-		 double & mety
-		  );
+		 double & mety,
+		 bool isTruth
+		 );
 int calculateRJigsawVariables(const xAOD::JetContainer * jets,
 			     Double_t metx,
 			     Double_t mety,
@@ -107,7 +108,8 @@ int main(){
     for(Long64_t ientry = 0; ientry < event->getEntries(); ++ientry){
 
       xAOD::JetContainer const * jets = nullptr;
-      assert( metMaker->evtStore()->retrieve(jets , "AntiKt4EMTopoJets") );
+      assert( metMaker->evtStore()->retrieve(jets , "AntiKt4TruthJets") );
+      //      assert( metMaker->evtStore()->retrieve(jets , "AntiKt4EMTopoJets") );
 
       xAOD::JetContainer* goodJets = new xAOD::JetContainer();
       xAOD::AuxContainerBase* goodJetsAux = new xAOD::AuxContainerBase();
@@ -136,7 +138,7 @@ int main(){
       double metx = 0;
       double mety = 0;
 
-      calculateMET(metx,mety);
+      calculateMET(metx,mety,true);//isTruth
 
       calculateRJigsawVariables(goodJets,
 				metx,
@@ -154,8 +156,19 @@ int main(){
 }
 
 int calculateMET(double & metx,
-		 double & mety
+		 double & mety,
+		 bool isTruth = true
 		 ){
+  if(isTruth){
+    const xAOD::MissingETContainer* met_Truth  = nullptr;
+    std::string metTruthKey = "MET_Truth";
+    assert( metMaker->evtStore()->retrieve(met_Truth, metTruthKey) );
+    metx =     (*met_Truth)["NonInt"]->mpx();
+    mety =     (*met_Truth)["NonInt"]->mpy();
+
+    return 1;
+  }else{
+
     //retrieve the original containers
     const xAOD::MissingETContainer* coreMet  = nullptr;
     std::string coreMetKey = "MET_Core_AntiKt4EMTopo";
@@ -261,7 +274,7 @@ int calculateMET(double & metx,
 
     metx = (*met_it)->mpx();
     mety = (*met_it)->mpy();
-
+  }//end not is truth
     return 0;
 }
 
